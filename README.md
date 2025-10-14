@@ -1,50 +1,67 @@
 
-# Knowledge-Base Search Engine
+# 7. Knowledge-base Search Engine
+
+**Kind Attn: Unthinkable Applied Students**
+It is noted that many students are uploading their resumes. We request everyone please go through the mail and do the assignment and upload it. If found any again action will be taken as per university norms.
+
+PFB the list of assignment allocation in the below mentioned sheet along with the assignments attached below for your reference, kindly share the assignment with the candidates with respect to the exact allocation in front of their name.
+Deadline to submit the assignment- 15th oct 2025.
+
+All are asked to submit the assignment in the below link on or before 15th Oct 2025 without fail.
+
+---
 
 ## 🎯 Objective
-This project is a production-grade "Knowledge-base Search Engine" that uses a Retrieval-Augmented Generation (RAG) architecture to search across multiple uploaded documents (PDF/TXT) and provide accurate, synthesized answers to user queries.
+Search across documents and provide synthesized answers using LLM-based Retrieval-Augmented Generation (RAG).
+
+## 🧩 Scope of Work
+*   Input: Multiple text/PDF documents
+*   Output: User query → synthesized answer
+*   Frontend for query submission & display
+
+## ⚙️ Technical Expectations
+*   Backend API to handle document ingestion & queries
+*   RAG implementation or embeddings for retrieval
+*   LLM for answer synthesis
+
+## 🧠 LLM Usage Guidance
+*   Prompt example: “Using these documents, answer the user’s question succinctly.”
+
+## 🧮 Deliverables
+*   GitHub repo + README
+*   Demo video
+
+## 📊 Evaluation Focus
+*   Retrieval accuracy, synthesis quality, code structure, LLM integration
+
+---
+
+## Project Overview
+This project is a production-grade "Knowledge-base Search Engine" that uses a Retrieval-Augmented Generation (RAG) architecture to search across multiple uploaded documents (PDF/TXT) and provide accurate, synthesized answers to user queries. This version runs entirely locally, using free, open-source models from Hugging Face, and features a modern Next.js frontend.
 
 ## Architecture
 The application follows a classic RAG pipeline:
 
-1.  **Document Ingestion:** Users upload PDF or TXT files through a web interface.
-2.  **Chunking:** The uploaded documents are split into smaller, manageable chunks (500-1000 tokens).
-3.  **Embedding:** Each chunk is converted into a numerical representation (embedding) using a sentence transformer model.
-4.  **Vector Storage:** The embeddings are stored in a FAISS vector database for efficient similarity search.
-5.  **Query & Retrieval:** When a user asks a question, the query is embedded, and the vector database is searched for the most relevant document chunks (top-k).
-6.  **Answer Synthesis:** The retrieved chunks (context) and the original query are passed to a large language model (LLM) like Gemini, which generates a concise and accurate answer.
+1.  **Document Ingestion:** Users upload PDF or TXT files through a web interface. Uploading new files automatically clears previous ones to ensure a focused knowledge base.
+2.  **Chunking:** The uploaded documents are split into smaller, manageable chunks.
+3.  **Embedding:** Each chunk is converted into a numerical representation (embedding) using a local `SentenceTransformers` model (`all-MiniLM-L6-v2`).
+4.  **Vector Storage:** The embeddings are stored in a local FAISS vector database for efficient similarity search. The vector store is rebuilt on every query to ensure it's always up-to-date with the latest uploaded files.
+5.  **Retrieval & Re-ranking:** When a user asks a question, the query is embedded, and the vector database is searched for the most relevant document chunks. These initial results are then **re-ranked** by a `Cross-Encoder` model (`cross-encoder/ms-marco-MiniLM-L-6-v2`) to ensure only the most pertinent chunks are passed to the LLM.
+6.  **Answer Synthesis:** The re-ranked chunks (context) and the original query are passed to a local instruction-tuned model (`google/flan-t5-small`), which generates a concise and accurate answer.
 
 ![RAG Architecture](https://i.imgur.com/3A2Y4fH.png)
 
 ---
 
 ## ⚙️ Technical Stack
-*   **Backend:** Python, FastAPI
+*   **Backend:** Python (FastAPI)
 *   **RAG Implementation:** LangChain
 *   **Vector Database:** FAISS (Facebook AI Similarity Search)
-*   **LLM:** Google Gemini
-*   **Frontend:** Streamlit
-*   **File Formats:** PDF, TXT
-
----
-
-## 🧱 Project Structure
-```
-knowledgebase_search_engine/
-├── app/
-│ ├── main.py # FastAPI app definition
-│ ├── upload.py # File upload endpoint
-│ ├── query.py # Query processing endpoint
-│ ├── ingest.py # Document loading and chunking
-│ ├── retriever.py # Embedding and vector store logic
-│ ├── generator.py # LLM interaction and answer synthesis
-│ └── utils.py # Utility functions (logging, env vars)
-├── documents/ # Storage for uploaded files
-├── embeddings/ # Storage for FAISS index
-├── requirements.txt # Project dependencies
-├── README.md # This file
-└── demo_video_guide.txt # Guide for creating a demo video
-```
+*   **Embeddings:** Hugging Face SentenceTransformers (`all-MiniLM-L6-v2`)
+*   **Re-ranking:** Hugging Face Cross-Encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`)
+*   **LLM:** Hugging Face Transformers (`google/flan-t5-small`)
+*   **Frontend:** Next.js (React) with Tailwind CSS
+*   **File Formats:** PDF (via PyMuPDFLoader), TXT
 
 ---
 
@@ -52,71 +69,71 @@ knowledgebase_search_engine/
 
 ### Prerequisites
 *   Python 3.8+
-*   An API key for Google Gemini.
+*   Node.js (LTS version recommended)
+*   `pip` and `npm` (or `yarn`) for package management.
 
 ### Installation & Setup
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/your-username/knowledgebase-search-engine.git
-    cd knowledgebase-search-engine
+    cd knowledgebase_search_engine
     ```
 
-2.  **Create a virtual environment and install dependencies:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate # On Windows, use `venv\Scripts\activate`
-    pip install -r requirements.txt
-    ```
+2.  **Backend Setup:**
+    *   **Create a Python virtual environment:**
+        ```bash
+        python -m venv envname
+        source envname/bin/activate # On Windows, use `envname\Scripts\activate`
+        ```
+    *   **Install Python dependencies:**
+        ```bash
+        pip install -r requirements.txt
+        ```
 
-3.  **Set up your environment variables:**
-    Create a `.env` file in the root directory and add your Gemini API key:
-    ```
-    GEMINI_API_KEY="your_gemini_api_key"
-    ```
+3.  **Frontend Setup:**
+    *   **Navigate to the frontend directory:**
+        ```bash
+        cd frontend
+        ```
+    *   **Install Node.js dependencies:**
+        ```bash
+        npm install
+        ```
+
+    **Note:** The first time you run the application, the necessary Hugging Face models (a few hundred MBs each) will be downloaded and cached on your machine. This may take a few minutes depending on your internet connection.
 
 ### Running the Application
 1.  **Start the FastAPI backend:**
-    ```bash
-    uvicorn app.main:app --reload
-    ```
+    *   Open a new terminal in the project's root directory (`knowledgebase_search_engine`).
+    *   Activate your Python virtual environment: `source envname/bin/activate` (or `envname\Scripts\activate` on Windows).
+    *   Run:
+        ```bash
+        uvicorn app.main:app --reload
+        ```
     The API will be accessible at `http://127.0.0.1:8000`.
 
-2.  **Run the Streamlit frontend:**
-    In a new terminal, run:
-    ```bash
-    streamlit run app_streamlit.py
-    ```
-    The web interface will be available at `http://localhost:8501`.
+2.  **Start the Next.js frontend:**
+    *   Open *another* new terminal.
+    *   Navigate to the `frontend` directory: `cd frontend`.
+    *   Run:
+        ```bash
+        npm run dev
+        ```
+    The web interface will be available at `http://localhost:3000`.
 
 ---
 
 ## 📖 API Routes
-*   **`POST /api/upload`**: Upload one or more PDF or TXT files.
+*   **`POST /api/upload`**: Upload one or more PDF or TXT files. Clears previous files.
     *   **Request:** `multipart/form-data` with `files` field containing the files.
     *   **Response:** `{"message": "Successfully uploaded [filenames]"}`
+
+*   **`GET /api/documents`**: List all currently uploaded document filenames.
+    *   **Response:** `{"files": ["file1.pdf", "file2.txt"]}`
 
 *   **`POST /api/query`**: Ask a question and get an answer.
     *   **Request Body:** `{"query": "Your question here"}`
     *   **Response:** `{"answer": "The generated answer.", "source_documents": [...]}`
-
----
-
-## 🧪 Example Usage
-
-### 1. Upload Documents
-Use the Streamlit UI or a tool like `curl` to upload your documents:
-```bash
-curl -X POST -F "files=@/path/to/your/document1.pdf" -F "files=@/path/to/your/document2.txt" http://127.0.0.1:8000/api/upload
-```
-
-### 2. Ask a Question
-Once the documents are uploaded and processed, ask a question through the Streamlit UI or via the API:
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"query": "What is the main topic of the documents?"}' http://127.0.0.1:8000/api/query
-```
-
-### Expected Output
-The application will return a JSON object with the answer and the source documents that were used to generate it.
 
 ---
 

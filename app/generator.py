@@ -1,25 +1,28 @@
 
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from langchain_google_genai import ChatGoogleGenerativeAI
-from app.utils import get_env_variable
-import os
+from langchain_huggingface import HuggingFacePipeline
+from transformers import pipeline
 
-def get_llm(model_name: str = "gemini-pro", temperature: float = 0.7):
+def get_llm(model_name: str = "google/flan-t5-small", temperature: float = 0.7):
     """
-    Get a Google Generative AI model.
+    Get a Hugging Face pipeline for text generation.
 
     Args:
-        model_name (str, optional): The name of the model to use. Defaults to "gemini-pro".
+        model_name (str, optional): The name of the model to use. Defaults to "google/flan-t5-small".
         temperature (float, optional): The temperature to use for the model. Defaults to 0.7.
 
     Returns:
-        ChatGoogleGenerativeAI: A Google Generative AI model.
+        HuggingFacePipeline: A Hugging Face pipeline.
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set.")
-    return ChatGoogleGenerativeAI(model=model_name, temperature=temperature, google_api_key=api_key)
+    pipe = pipeline(
+        "text2text-generation",
+        model=model_name,
+        max_length=512,
+        device=-1  # Force CPU usage
+    )
+    # The temperature flag is not valid for flan-t5 models and will be ignored.
+    return HuggingFacePipeline(pipeline=pipe)
 
 def get_prompt_template() -> PromptTemplate:
     """
@@ -29,8 +32,9 @@ def get_prompt_template() -> PromptTemplate:
         PromptTemplate: A prompt template.
     """
     prompt_template = """
-    You are an intelligent assistant that answers questions based on the provided document context.
-    Use only the context below to answer accurately.
+    You are an expert assistant. Your task is to answer the user's question based *only* on the provided context.
+    Read the context carefully, synthesize the information, and provide a clear, concise answer.Do not repeat yourself.
+    Do not add any information that is not in the context.
 
     Context:
     {context}
@@ -38,9 +42,10 @@ def get_prompt_template() -> PromptTemplate:
     Question:
     {question}
 
-    Answer concisely and clearly, without speculation.
+    Concise Answer:
     """
     return PromptTemplate(template=prompt_template, input_variables=["context", "question"])
+
 
 def create_llm_chain(llm, prompt_template: PromptTemplate) -> LLMChain:
     """

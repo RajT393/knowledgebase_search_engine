@@ -1,5 +1,4 @@
-
-from langchain.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.document_loaders import PyMuPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List
 
@@ -14,9 +13,9 @@ def load_documents(file_path: str) -> List[str]:
         List[str]: A list of document contents.
     """
     if file_path.endswith(".pdf"):
-        loader = PyPDFLoader(file_path)
+        loader = PyMuPDFLoader(file_path)
     elif file_path.endswith(".txt"):
-        loader = TextLoader(file_path)
+        loader = TextLoader(file_path, encoding='utf-8')
     else:
         raise ValueError("Unsupported file type.")
     return loader.load()
@@ -35,4 +34,3 @@ def chunk_documents(documents: List[str], chunk_size: int = 1000, chunk_overlap:
     """
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     return text_splitter.split_documents(documents)
-

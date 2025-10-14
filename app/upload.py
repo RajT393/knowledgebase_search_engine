@@ -1,7 +1,7 @@
-
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import List
 import os
+import glob
 
 router = APIRouter()
 
@@ -10,7 +10,7 @@ UPLOAD_DIR = "documents"
 @router.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
     """
-    Upload a list of files to the server.
+    Upload a list of files to the server. This will delete all previously uploaded files.
 
     Args:
         files (List[UploadFile], optional): A list of files to upload. Defaults to File(...).
@@ -20,7 +20,12 @@ async def upload_files(files: List[UploadFile] = File(...)):
     """
     if not os.path.exists(UPLOAD_DIR):
         os.makedirs(UPLOAD_DIR)
+    
+    # Clean out the documents directory before uploading new files
+    for f in glob.glob(os.path.join(UPLOAD_DIR, "*")):
+        os.remove(f)
 
+    # Save the new files
     for file in files:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         try:
@@ -30,4 +35,3 @@ async def upload_files(files: List[UploadFile] = File(...)):
             raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
     return {"message": f"Successfully uploaded {[file.filename for file in files]}"}
-

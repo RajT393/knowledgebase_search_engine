@@ -1,26 +1,22 @@
 
-from langchain.vectorstores import FAISS
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
-from app.utils import get_env_variable
 import os
 
-def create_vector_store(chunks: list, embedding_model: str = "google/gemini-pro") -> FAISS:
+EMBEDDING_DIR = "embeddings"
+
+def create_vector_store(chunks: list) -> FAISS:
     """
     Create a FAISS vector store from a list of document chunks.
 
     Args:
         chunks (list): A list of document chunks.
-        embedding_model (str, optional): The name of the embedding model to use. 
-                                        Defaults to "google/gemini-pro".
 
     Returns:
         FAISS: A FAISS vector store.
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set.")
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vector_store = FAISS.from_documents(chunks, embedding=embeddings)
     return vector_store
 
