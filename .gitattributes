@@ -1,0 +1,3 @@
+# Tell GitHub Linguist not to ignore the frontend
+frontend/* linguist-vendored=false
+frontend/**/* linguist-vendored=false
