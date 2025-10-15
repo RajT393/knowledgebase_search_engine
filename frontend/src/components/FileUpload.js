@@ -95,10 +95,10 @@ export default function FileUpload({ onUploadSuccess }) {
     <div className="space-y-4">
       {/* Drag & Drop Area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 ${
           isDragOver 
-            ? 'border-blue-500 bg-blue-500/10' 
-            : 'border-gray-600 hover:border-gray-500'
+            ? 'border-orange-500 bg-orange-50' 
+            : 'border-gray-300 hover:border-orange-400 hover:bg-orange-25'
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -107,14 +107,14 @@ export default function FileUpload({ onUploadSuccess }) {
         tabIndex={0}
       >
         <div className="space-y-2">
-          <div className="text-gray-400">
+          <div className="text-orange-400">
             <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
-          <p className="text-sm font-medium">Drag & drop files here</p>
-          <p className="text-xs text-gray-400">or click to browse</p>
-          <p className="text-xs text-blue-400 font-medium">Select multiple files, then click Upload</p>
+          <p className="text-sm font-medium text-gray-700">Drag & drop files here</p>
+          <p className="text-xs text-gray-500">or click to browse</p>
+          <p className="text-xs text-orange-500 font-medium">Select multiple files, then click Upload</p>
         </div>
       </div>
 
@@ -130,17 +130,17 @@ export default function FileUpload({ onUploadSuccess }) {
 
       {/* Selected Files List */}
       {selectedFiles.length > 0 && (
-        <div className="border border-gray-600 rounded-lg p-4">
-          <h4 className="text-sm font-semibold mb-3">Selected Files ({selectedFiles.length}) - Ready to Upload</h4>
+        <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+          <h4 className="text-sm font-semibold mb-3 text-gray-800">Selected Files ({selectedFiles.length}) - Ready to Upload</h4>
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {selectedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-gray-700 rounded">
+              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
-                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-sm truncate flex-1">{file.name}</span>
-                  <span className="text-xs text-gray-400 flex-shrink-0">
+                  <span className="text-sm truncate flex-1 text-gray-700">{file.name}</span>
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {(file.size / (1024 * 1024)).toFixed(2)} MB
                   </span>
                 </div>
@@ -149,7 +149,7 @@ export default function FileUpload({ onUploadSuccess }) {
                     e.stopPropagation();
                     handleRemoveFile(index);
                   }}
-                  className="text-red-400 hover:text-red-300 transition-colors p-1 ml-2"
+                  className="text-red-400 hover:text-red-500 transition-colors p-1 ml-2"
                   title="Remove file"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,8 +159,8 @@ export default function FileUpload({ onUploadSuccess }) {
               </div>
             ))}
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-600">
-            <p className="text-xs text-gray-400">
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
               Total: {selectedFiles.length} file(s) • {totalSizeMB} MB
             </p>
           </div>
@@ -172,7 +172,7 @@ export default function FileUpload({ onUploadSuccess }) {
         <button
           onClick={handleUpload}
           disabled={isUploading}
-          className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors flex items-center justify-center space-x-2"
+          className="w-full py-2 px-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-orange-300 transition-all duration-200 flex items-center justify-center space-x-2 shadow-sm"
         >
           {isUploading ? (
             <>
@@ -194,8 +194,8 @@ export default function FileUpload({ onUploadSuccess }) {
       )}
 
       <div className="text-center">
-        <p className="text-xs text-gray-400">Supported formats: PDF, TXT, DOC, DOCX</p>
-        <p className="text-xs text-gray-400 mt-1">Max file size: 10MB per file</p>
+        <p className="text-xs text-gray-500">Supported formats: PDF, TXT, DOC, DOCX</p>
+        <p className="text-xs text-gray-500 mt-1">Max file size: 10MB per file</p>
       </div>
     </div>
   );
