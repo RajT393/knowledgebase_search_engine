@@ -79,7 +79,7 @@ export default function FileList({ refreshTrigger }) {
   }
 
   return (
-    <div className="space-y-2 max-h-64 overflow-y-auto">
+    <div className="space-y-2 h-full overflow-y-auto">
       {files.length === 0 ? (
         <div className="text-center py-4">
           <p className="text-gray-500 text-sm">No files uploaded yet</p>

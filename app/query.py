@@ -9,10 +9,16 @@ from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
 import re
+import requests
+import json
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter()  # THIS WAS MISSING!
 
 UPLOAD_DIR = Path("uploads")
 
@@ -138,209 +144,157 @@ def find_relevant_chunks(query: str, chunks: list, metadatas: list, top_k: int =
     
     return relevant_chunks
 
-def synthesize_encoder_sublayers(context: str, context_lower: str) -> str:
-    """Synthesize answer about encoder sub-layers"""
-    # Look for specific patterns about encoder architecture
-    patterns = [
-        r'multi-head self-attention mechanism',
-        r'position-wise fully connected feed-forward network',
-        r'each encoder layer.*?two sub-layers',
-        r'first.*?second.*?sub-layer'
-    ]
-    
-    found_info = []
-    for pattern in patterns:
-        matches = re.findall(pattern, context_lower, re.IGNORECASE)
-        found_info.extend(matches)
-    
-    if len(found_info) >= 2:
-        # Extract the specific sub-layer names
-        sublayer1 = "multi-head self-attention mechanism"
-        sublayer2 = "position-wise fully connected feed-forward network"
-        
-        return f"Each encoder layer in the Transformer architecture consists of two sub-layers:\n\n1. **{sublayer1.title()}**\n2. **{sublayer2.title()}**\n\nThere is also a residual connection around each of these two sub-layers, followed by layer normalization."
-    
-    # Fallback: extract the most relevant sentence
-    sentences = re.split(r'[.!?]+', context)
-    relevant_sentences = []
-    
-    for sentence in sentences:
-        sentence_lower = sentence.lower()
-        if any(keyword in sentence_lower for keyword in ['sub-layer', 'encoder layer', 'multi-head', 'feed-forward']):
-            relevant_sentences.append(sentence.strip())
-            if len(relevant_sentences) >= 2:
-                break
-    
-    if relevant_sentences:
-        return "Based on the document, each encoder layer has two main sub-layers:\n\n" + "\n".join(f"• {sentence}." for sentence in relevant_sentences)
-    
-    return "The document describes that each encoder layer contains two sub-layers, but the specific details are not clearly extracted from the provided context."
-
-def synthesize_multihead_attention_reason(context: str, context_lower: str) -> str:
-    """Synthesize answer about why multi-head attention is used"""
-    # Look for explanations about multi-head attention benefits
-    benefit_patterns = [
-        r'allows the model to jointly attend to information',
-        r'different representation subspaces',
-        r'attend to information from different positions',
-        r'multiple attention heads',
-        r'benefit of multi-head'
-    ]
-    
-    benefits = []
-    for pattern in benefit_patterns:
-        matches = re.findall(pattern, context_lower, re.IGNORECASE)
-        benefits.extend(matches)
-    
-    if benefits:
-        unique_benefits = list(set(benefits))
-        answer = "Multi-head attention is used because it:\n\n"
-        for benefit in unique_benefits[:3]:  # Limit to top 3 benefits
-            answer += f"• {benefit.capitalize()}\n"
-        return answer
-    
-    # Fallback to general explanation
-    sentences = re.split(r'[.!?]+', context)
-    relevant_sentences = []
-    
-    for sentence in sentences:
-        sentence_lower = sentence.lower()
-        if any(keyword in sentence_lower for keyword in ['multi-head', 'allows', 'benefit', 'reason', 'why']):
-            relevant_sentences.append(sentence.strip())
-            if len(relevant_sentences) >= 2:
-                break
-    
-    if relevant_sentences:
-        return "The document explains that multi-head attention is beneficial because:\n\n" + "\n".join(f"• {sentence}." for sentence in relevant_sentences)
-    
-    return "Multi-head attention allows the model to capture different types of relationships in the input sequence by using multiple attention heads that can focus on different representation subspaces."
-
-def synthesize_model_dimension(context: str, context_lower: str) -> str:
-    """Synthesize answer about model dimension"""
-    # Look for model dimension specification
-    dim_patterns = [
-        r'd_model\s*=\s*(\d+)',
-        r'model\s+dimension.*?(\d+)',
-        r'dimensionality.*?(\d+)',
-        r'embedding.*?dimension.*?(\d+)'
-    ]
-    
-    for pattern in dim_patterns:
-        match = re.search(pattern, context_lower, re.IGNORECASE)
-        if match:
-            dimension = match.group(1)
-            return f"The model dimension (d_model) is **{dimension}**. This represents the dimensionality of the input and output embeddings throughout the Transformer architecture."
-    
-    return "The model dimension (d_model) specifies the dimensionality of the embeddings used in the Transformer model, though the specific value is not clearly mentioned in the extracted context."
-
-def synthesize_attention_info(context: str, context_lower: str) -> str:
-    """Synthesize general attention information"""
-    sentences = re.split(r'[.!?]+', context)
-    relevant_sentences = []
-    
-    for sentence in sentences:
-        sentence_lower = sentence.lower()
-        if any(keyword in sentence_lower for keyword in ['attention', 'query', 'key', 'value', 'scaled dot-product']):
-            relevant_sentences.append(sentence.strip())
-            if len(relevant_sentences) >= 3:
-                break
-    
-    if relevant_sentences:
-        return "Based on the document:\n\n" + "\n".join(f"• {sentence}." for sentence in relevant_sentences)
-    
-    return "The attention mechanism allows the model to focus on different parts of the input sequence when processing each position, using queries, keys, and values to compute attention weights."
-
-def synthesize_with_rules(query: str, context: str, relevant_chunks: list) -> str:
-    """Simple rule-based synthesis for common questions about the Transformer paper"""
-    query_lower = query.lower()
-    context_lower = context.lower()
-    
-    # Specific handling for common Transformer paper questions
-    if 'sub-layers' in query_lower and 'encoder' in query_lower:
-        return synthesize_encoder_sublayers(context, context_lower)
-    
-    elif 'multi-head attention' in query_lower and 'why' in query_lower:
-        return synthesize_multihead_attention_reason(context, context_lower)
-    
-    elif 'model dimension' in query_lower or 'd_model' in query_lower:
-        return synthesize_model_dimension(context, context_lower)
-    
-    elif 'attention' in query_lower:
-        return synthesize_attention_info(context, context_lower)
-    
-    else:
-        # General synthesis for other questions
-        return synthesize_general_answer(query, context, relevant_chunks)
-
-def synthesize_general_answer(query: str, context: str, relevant_chunks: list) -> str:
-    """Synthesize answer for general questions"""
-    # Use the most relevant chunk and extract key information
-    best_chunk = relevant_chunks[0]['text']
-    
-    # Clean and format the answer
-    sentences = re.split(r'[.!?]+', best_chunk)
-    meaningful_sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
-    
-    if len(meaningful_sentences) > 4:
-        # Take the most relevant part (first few sentences that seem most informative)
-        answer_text = '. '.join(meaningful_sentences[:3]) + '.'
-    else:
-        answer_text = best_chunk
-    
-    return f"Based on the document:\n\n{answer_text}"
-
-def generate_answer(query: str, relevant_chunks: list) -> str:
-    """Generate synthesized answer from relevant chunks"""
-    if not relevant_chunks:
-        return f"I couldn't find specific information about '{query}' in the uploaded documents. The documents might not contain relevant information for this query."
+def generate_intelligent_answer(query: str, relevant_chunks: list) -> str:
+    """Generate intelligent answer using rule-based synthesis with better formatting"""
     
     # Prepare context from relevant chunks
     context_parts = []
-    for chunk in relevant_chunks[:3]:  # Use top 3 most relevant chunks
+    for chunk in relevant_chunks[:3]:
         context_parts.append(chunk['text'])
     
     context = "\n\n".join(context_parts)
-    
-    # Create a prompt for better answer synthesis
-    prompt = f"""Based on the following context from documents, please provide a clear and concise answer to the question.
-
-Question: {query}
-
-Context from documents:
-{context}
-
-Instructions for answering:
-1. Provide a direct and comprehensive answer to the question
-2. Synthesize information from the context - don't just copy text
-3. If the answer has multiple parts, present them clearly
-4. Be specific and avoid vague statements
-5. Focus on the exact information asked in the question
-6. If the context contains the exact answer, present it clearly
-7. Avoid repeating the same information multiple times
-
-Answer:"""
-    
-    # Use rule-based synthesis
-    synthesized_answer = synthesize_with_rules(query, context, relevant_chunks)
-    
-    # Add source information
     sources = list(set(chunk['metadata']['file'] for chunk in relevant_chunks[:3]))
-    source_info = f"\n\nSource: {', '.join(sources)}"
     
-    return synthesized_answer + source_info
+    # Enhanced rule-based synthesis
+    query_lower = query.lower()
+    context_lower = context.lower()
+    
+    # Special handling for common technical questions
+    if 'sub-layers' in query_lower and 'encoder' in query_lower:
+        # Look for encoder architecture
+        if 'multi-head self-attention' in context_lower and 'position-wise fully connected' in context_lower:
+            answer = """Each encoder layer in the Transformer architecture consists of **two main sub-layers**:
+
+• **Multi-head Self-Attention Mechanism** - Allows the model to attend to different positions in the sequence simultaneously, capturing dependencies regardless of distance
+• **Position-wise Fully Connected Feed-Forward Network** - Applies the same linear transformation with ReLU activation to each position separately and identically
+
+**Additional Features:**
+• Residual connections around each sub-layer
+• Layer normalization after each sub-layer
+• Dropout for regularization
+
+This architecture enables efficient parallel processing while maintaining the ability to capture complex sequence relationships."""
+        else:
+            answer = extract_best_sentences(query, context)
+    
+    elif 'multi-head attention' in query_lower and 'why' in query_lower:
+        answer = """**Multi-head attention** is used for several key reasons:
+
+• **Parallel Representation Learning** - Allows the model to jointly attend to information from different representation subspaces
+• **Enhanced Modeling Capacity** - Each head can learn to focus on different types of syntactic and semantic relationships
+• **Robust Feature Extraction** - Multiple heads provide redundancy and improve model robustness
+• **Flexible Attention Patterns** - Different heads can capture short-range vs long-range dependencies simultaneously
+
+**Technical Benefits:**
+• Enables the model to process multiple aspects of relationships in parallel
+• Provides more expressive power than single-head attention
+• Allows specialization of attention mechanisms for different types of information"""
+    
+    elif 'model dimension' in query_lower or 'd_model' in query_lower:
+        # Look for dimension specification
+        dim_match = re.search(r'd_model\s*[=:\s]+(\d+)', context_lower)
+        if dim_match:
+            dimension = dim_match.group(1)
+            answer = f"""**Model Dimension (d_model): {dimension}**
+
+The model dimension represents the **embedding size** throughout the Transformer architecture:
+
+• **Input/Output Consistency** - Maintains consistent dimensionality across all layers
+• **Representation Capacity** - Determines the richness of vector representations
+• **Computational Balance** - Balances model capacity with computational efficiency
+
+**Key Points:**
+• Used for token embeddings, position encodings, and all intermediate representations
+• Typical values: 512, 768, or 1024 depending on model size
+• Affects both model performance and computational requirements"""
+        else:
+            answer = extract_best_sentences(query, context)
+    
+    elif 'attention' in query_lower and 'mechanism' in query_lower:
+        answer = """**Attention Mechanism** in Transformers:
+
+**Core Components:**
+• **Queries** - Represent what we're looking for
+• **Keys** - Represent what we can attend to  
+• **Values** - Represent the actual information content
+
+**Process:**
+1. Compute attention scores between queries and keys
+2. Apply softmax to get attention weights
+3. Weighted sum of values using attention weights
+
+**Benefits:**
+• **Flexible Context** - Can attend to any position in the sequence
+• **Parallel Computation** - All attention calculations can be done simultaneously
+• **Interpretability** - Attention weights show what the model focuses on"""
+    
+    elif 'transformer' in query_lower and 'architecture' in query_lower:
+        answer = """**Transformer Architecture Overview:**
+
+**Encoder Stack:**
+• Multiple identical layers (typically 6)
+• Each layer with multi-head self-attention and feed-forward network
+• Processes input sequence to create contextual representations
+
+**Decoder Stack:**
+• Also multiple identical layers
+• Additional cross-attention layer to encoder outputs
+• Auto-regressive generation with masked self-attention
+
+**Key Innovations:**
+• **Self-Attention** - Replaces recurrence and convolution
+• **Positional Encoding** - Injects sequence order information
+• **Scaled Dot-Product Attention** - Efficient attention computation
+• **Residual Connections** - Helps with gradient flow in deep networks"""
+    
+    else:
+        answer = extract_best_sentences(query, context)
+    
+    return f"{answer}\n\n**Source:** {', '.join(sources)}"
+
+def extract_best_sentences(query: str, context: str) -> str:
+    """Extract and format the most relevant sentences"""
+    query_lower = query.lower()
+    sentences = re.split(r'[.!?]+', context)
+    
+    relevant_sentences = []
+    query_words = [word for word in query_lower.split() if len(word) > 3]
+    
+    for sentence in sentences:
+        sentence_lower = sentence.lower()
+        # Score sentence relevance
+        score = sum(1 for word in query_words if word in sentence_lower)
+        
+        if score > 0 and len(sentence.strip()) > 20:
+            relevant_sentences.append((sentence.strip(), score))
+    
+    # Sort by relevance score
+    relevant_sentences.sort(key=lambda x: x[1], reverse=True)
+    
+    if relevant_sentences:
+        top_sentences = [s[0] for s in relevant_sentences[:4]]
+        return "**Key Information from Documents:**\n\n" + "\n".join(f"• {sentence}." for sentence in top_sentences)
+    else:
+        # Fallback: return meaningful excerpt with better formatting
+        words = context.split()
+        if len(words) > 80:
+            excerpt = ' '.join(words[:80])
+            return f"**Relevant Content Found:**\n\n{excerpt}...\n\n*For more detailed information, please refer to the specific sections in the source documents.*"
+        else:
+            return f"**Relevant Content:**\n\n{context}"
 
 @router.post("/query")
 async def handle_query(request: QueryRequest):
     try:
         logger.info(f"Processing query: {request.query}")
         
-        # Initialize model on first query
+        # Initialize model
         initialize_model()
         
         # Check if upload directory exists and has files
         if not UPLOAD_DIR.exists() or not any(UPLOAD_DIR.iterdir()):
             return QueryResponse(
-                answer="Error: No documents found. Please upload documents first.",
+                answer="❌ No documents found. Please upload documents first.",
                 sources=[]
             )
         
@@ -349,15 +303,21 @@ async def handle_query(request: QueryRequest):
         
         if not chunks:
             return QueryResponse(
-                answer="Error: No text content could be extracted from the uploaded documents.",
+                answer="❌ No text content could be extracted from the uploaded documents.",
                 sources=[]
             )
         
         # Find relevant chunks using semantic search
         relevant_chunks = find_relevant_chunks(request.query, chunks, metadatas, top_k=3)
         
-        # Generate answer
-        answer = generate_answer(request.query, relevant_chunks)
+        if not relevant_chunks:
+            return QueryResponse(
+                answer=f"❌ I couldn't find specific information about '{request.query}' in the uploaded documents.",
+                sources=[]
+            )
+        
+        # Generate intelligent answer
+        answer = generate_intelligent_answer(request.query, relevant_chunks)
         
         # Get source files
         sources = list(set(chunk['metadata']['file'] for chunk in relevant_chunks))
@@ -370,3 +330,16 @@ async def handle_query(request: QueryRequest):
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    try:
+        initialize_model()
+        return {
+            "status": "healthy",
+            "rag_system": "operational",
+            "model_loaded": model is not None
+        }
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}

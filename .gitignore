@@ -7,7 +7,7 @@ __pycache__/
 .Python
 env/
 venv/
-envname/
+know/
 *.env
 .pytest_cache/
 .ipynb_checkpoints/
