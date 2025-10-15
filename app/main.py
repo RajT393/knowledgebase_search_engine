@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from app.upload import router as upload_router
 from app.query import router as query_router
-from app.documents import router as documents_router # New import
 from app.utils import setup_logging
 
 app = FastAPI(
@@ -13,7 +14,7 @@ app = FastAPI(
 
 # Set up CORS middleware
 origins = [
-    "http://localhost:3000",  # The origin of our Next.js frontend
+    "http://localhost:3000",
 ]
 
 app.add_middleware(
@@ -24,14 +25,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create uploads directory and mount it
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 @app.on_event("startup")
 async def startup_event():
     setup_logging()
 
+# Include routers
 app.include_router(upload_router, prefix="/api")
 app.include_router(query_router, prefix="/api")
-app.include_router(documents_router, prefix="/api") # New router inclusion
 
 @app.get("/")
 async def root():
     return {"message": "Welcome to the Knowledge-Base Search Engine!"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Server is running"}

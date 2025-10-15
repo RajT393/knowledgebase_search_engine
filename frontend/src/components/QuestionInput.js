@@ -1,6 +1,3 @@
-
-"use client";
-
 import { useState } from 'react';
 
 export default function QuestionInput({ onSend, isLoading }) {
@@ -8,25 +5,26 @@ export default function QuestionInput({ onSend, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!question.trim() || isLoading) return;
-    onSend(question);
-    setQuestion('');
+    if (question.trim() && !isLoading) {
+      onSend(question);
+      setQuestion('');
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex items-center space-x-2">
+    <form onSubmit={handleSubmit} className="flex space-x-4">
       <input
         type="text"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
         placeholder="Ask a question about your documents..."
-        className="flex-grow p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white"
         disabled={isLoading}
       />
       <button
         type="submit"
-        disabled={isLoading}
-        className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+        disabled={!question.trim() || isLoading}
+        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? 'Sending...' : 'Send'}
       </button>

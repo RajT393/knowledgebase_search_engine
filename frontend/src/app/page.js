@@ -49,17 +49,42 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-800 text-white">
-      <div className="w-full max-w-4xl flex-grow flex flex-col p-4">
-        <div className="w-full my-4">
-            <h1 className="text-3xl font-bold text-center mb-4">Knowledge Base Chat</h1>
-            <FileUpload onUploadSuccess={handleUploadSuccess} />
-            <FileList refreshTrigger={fileRefreshTrigger} />
+    <main className="flex min-h-screen bg-gray-900 text-white">
+      {/* Left Sidebar - File Management */}
+      <div className="w-1/4 bg-gray-800 border-r border-gray-700 flex flex-col">
+        <div className="p-6 border-b border-gray-700">
+          <h1 className="text-2xl font-bold mb-2">Knowledge Base Search Engine</h1>
+          <p className="text-gray-400 text-sm">By:koteswara Raju</p>
         </div>
         
-        <ChatWindow messages={messages} isLoading={isLoading} />
+        <div className="flex-1 p-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-3">Document Management</h2>
+            <FileUpload onUploadSuccess={handleUploadSuccess} />
+          </div>
+          
+          <div>
+            <h3 className="text-md font-semibold mb-3">Uploaded Files</h3>
+            <FileList refreshTrigger={fileRefreshTrigger} />
+          </div>
+        </div>
+      </div>
 
-        <div className="w-full p-4 mt-auto">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Chat Header */}
+        <div className="bg-gray-800 border-b border-gray-700 p-4">
+          <h2 className="text-xl font-semibold">Knowledge Base Chat</h2>
+          <p className="text-gray-400 text-sm">Ask questions about your uploaded documents</p>
+        </div>
+
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-hidden">
+          <ChatWindow messages={messages} isLoading={isLoading} />
+        </div>
+
+        {/* Input Area */}
+        <div className="border-t border-gray-700 p-4 bg-gray-800">
           <QuestionInput onSend={handleSend} isLoading={isLoading} />
         </div>
       </div>
